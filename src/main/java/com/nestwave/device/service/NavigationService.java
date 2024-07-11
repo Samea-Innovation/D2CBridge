@@ -18,6 +18,7 @@
  *****************************************************************************/
 package com.nestwave.device.service;
 
+import com.combain.service.CombainService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nestwave.device.model.*;
@@ -53,16 +54,21 @@ public class NavigationService extends GnssService{
 	private final ThinTrackPlatformStatusRepository thintrackPlatformStatusRepository;
 	private PartnerService[] partnerServices;
 
+	private final CombainService combainService;
+
 	public NavigationService(JwtTokenUtil jwtTokenUtil,
-	                         PositionRepository positionRepository,
-	                         ThinTrackPlatformStatusRepository thintrackPlatformStatusRepository,
-                           @Value("${navigation.base_url}") String uri,
-	                         ObjectMapper objectMapper,
-	                         RestTemplate restTemplate){
+                             PositionRepository positionRepository,
+                             ThinTrackPlatformStatusRepository thintrackPlatformStatusRepository,
+                             @Value("${navigation.base_url}") String uri,
+                             ObjectMapper objectMapper,
+                             RestTemplate restTemplate,
+							 CombainService combainService
+    ) {
 		super(jwtTokenUtil, uri, restTemplate, objectMapper);
 		this.positionRepository = positionRepository;
 		this.thintrackPlatformStatusRepository = thintrackPlatformStatusRepository;
-		partnerServices = new PartnerService[0];
+        this.combainService = combainService;
+        partnerServices = new PartnerService[0];
   }
 
 	public boolean supports(String apiVer){
@@ -124,6 +130,7 @@ public class NavigationService extends GnssService{
 		ResponseEntity<GnssPositionResults> responseEntity;
 		GnssServiceResponse response;
 		GnssPositionResults navResults = null;
+		GnssPositionResults hybridResults = null;
 		String api = "locate";
 
 		try{
@@ -151,6 +158,26 @@ public class NavigationService extends GnssService{
 			return new GnssServiceResponse(INTERNAL_SERVER_ERROR, "Cloud not serialize navigation results:\n" + responseEntity);
 		}
 		navResults = responseEntity.getBody();
+
+		boolean hasHybrid = hybridNavigationParameters.hybrid != null;
+
+		// pas de réponse nextnav ?
+		// pas de précision ? bluetooth: 50, wifi: 100, cell: 500
+		// hybrid ?
+		if (hasHybrid && combainService.isUsable()) {
+			log.info("Payload has Hybrid");
+			if (responseEntity.getStatusCode() != OK || isNotPreciseEnough(hybridNavigationParameters.hybrid, navResults.confidence)) {
+
+				log.info("Trying Combain");
+				// Appel Combain
+				responseEntity = combainService.combainAPI(hybridNavigationParameters.hybrid, GnssPositionResults.class);
+
+				hybridResults = responseEntity.getBody();
+
+				log.info(hybridResults.toString());
+			}
+		}
+
 		for(ThinTrackPlatformStatusRecord thinTrackPlatformStatusRecord : thinTrackPlatformStatusRecords){
 			thinTrackPlatformStatusRecord.setKey(payload.deviceId, navResults.utcTime);
 			log.info("ThinkTrack platform status: {}", thinTrackPlatformStatusRecord);
