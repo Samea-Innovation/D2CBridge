@@ -165,6 +165,24 @@ public class NavigationService extends GnssService{
 		return response;
 	}
 
+	private static boolean isNotPreciseEnough(HybridNavParameters hybrid, float confidence) {
+		float confidenceToHave = 500;
+
+		Object[] cellTowers = hybrid.cellTowers;
+		Object[] wifiAccessPoints = hybrid.wifiAccessPoints;
+		Object[] bluetoothBeacons = hybrid.bluetoothBeacons;
+
+		if (cellTowers != null && cellTowers.length != 0)
+			confidenceToHave = 500;
+		if (wifiAccessPoints != null && wifiAccessPoints.length != 0)
+			confidenceToHave = 100;
+		if (bluetoothBeacons != null && bluetoothBeacons.length != 0)
+			confidenceToHave = 50;
+
+		log.info("Confidence to have {} VS actual confidence {}", confidenceToHave, confidence);
+        return confidence > confidenceToHave;
+	}
+
 	public GnssServiceResponse retrievePositionsFromDatabase(long deviceId)
 	{
 		String csv;
