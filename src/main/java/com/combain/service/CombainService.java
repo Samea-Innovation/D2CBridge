@@ -3,16 +3,15 @@ package com.combain.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nestwave.device.model.HybridNavParameters;
-import com.nestwave.device.service.GnssServiceResponse;
-import com.nestwave.model.GnssPositionResults;
-import com.nestwave.service.PartnerService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES;
@@ -20,21 +19,39 @@ import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
 import static org.apache.tomcat.util.codec.binary.Base64.encodeBase64String;
 
 @Slf4j
-public class CombainService implements PartnerService {
-
-    public final String uri = "https://apiv2.combain.com";
-
+@Service
+public class CombainService {
     private final RestTemplate restTemplate;
-    public final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
+    private final String token;
+    private final String uriBase;
 
-    CombainService(RestTemplate restTemplate, ObjectMapper objectMapper) {
+    private final Boolean usable;
+
+    private final Environment environment;
+
+    public CombainService(RestTemplate restTemplate,
+                          @Value("${partners.combain.url}") String uriBase,
+                          ObjectMapper objectMapper,
+                          Environment environment
+    ) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper.configure(ALLOW_UNQUOTED_FIELD_NAMES, true).
                 setSerializationInclusion(NON_NULL).
                 enable(INDENT_OUTPUT);
+        this.environment = environment;
+        this.uriBase = uriBase;
+        this.token = environment.getProperty("partners.combain.token");
+
+        this.usable = token != null && !token.isEmpty();
+        if (this.usable)
+            log.info("Registered Combain Service");
     }
 
+    public Boolean isUsable() {
+        return this.usable;
+    }
 
     public <T> ResponseEntity<T> combainAPI(HybridNavParameters hybridNavParameters, Class<T> responseType) {
         ResponseEntity<T> responseEntity;
@@ -45,7 +62,7 @@ public class CombainService implements PartnerService {
         responseEntity = null;
         for (int P = 0; P<3; P++) {
             try {
-                responseEntity = restTemplate.postForEntity(this.uri, requestEntity, responseType);
+                responseEntity = restTemplate.postForEntity(url, requestEntity, responseType);
                 break;
             } catch (ResourceAccessException e) {
                 log.error("{}", e.getMessage());
@@ -67,10 +84,5 @@ public class CombainService implements PartnerService {
         }
         log.info("Received answer: status: {}, payload: {}", responseEntity.getStatusCode(), strResponse);
         return responseEntity;
-    }
-
-    @Override
-    public GnssServiceResponse onGnssPosition(int customerId, long deviceId, long IMEI, GnssPositionResults gnssPositionResults) {
-        return null;
     }
 }
