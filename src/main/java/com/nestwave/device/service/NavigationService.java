@@ -18,7 +18,10 @@
  *****************************************************************************/
 package com.nestwave.device.service;
 
+import com.combain.model.CombainRequest;
+import com.combain.model.CombainResponse;
 import com.combain.service.CombainService;
+import com.combain.util.mapper.HybridNavigationParametersWithCombainRequestMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nestwave.device.model.*;
@@ -170,11 +173,11 @@ public class NavigationService extends GnssService{
 
 				log.info("Trying Combain");
 				// Appel Combain
-				responseEntity = combainService.combainAPI(hybridNavigationParameters.hybrid, GnssPositionResults.class);
 
-				hybridResults = responseEntity.getBody();
+				CombainRequest combainRequest = HybridNavigationParametersWithCombainRequestMapper.toCombainRequest(hybridNavigationParameters.hybrid);
+				CombainResponse combainResponse = combainService.locate(combainRequest);
 
-				log.info(hybridResults.toString());
+				log.info(combainResponse.toString());
 			}
 		}
 
