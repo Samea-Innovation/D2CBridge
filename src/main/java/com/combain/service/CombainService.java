@@ -12,7 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
@@ -71,24 +71,37 @@ public class CombainService {
         log.info(json);
         HttpEntity<String> request = new HttpEntity<>(json, headers);
 
-        ResponseEntity<String> responseEntity;
+        ResponseEntity<String> responseEntity = null;
+        json = null;
         int tryCount = 0;
         int maxTries = 3;
-        while (true) {
+        while (json == null) {
             try {
                 responseEntity = restTemplate.postForEntity(url, request, String.class);
-                break;
-            } catch (RestClientException e) {
-                log.error(e.getMessage());
 
-                if (++tryCount == maxTries) throw e;
+                log.info("Answer Combain:");
+                log.info("Status Code: {}", responseEntity.getStatusCode());
+
+                json = responseEntity.getBody();
+
+            } catch (HttpClientErrorException e) {
+                log.info("Answer Combain:");
+                log.info("Status Code: {}", e.getStatusCode());
+                switch (e.getStatusCode()) {
+                    case BAD_REQUEST:
+                    case NOT_FOUND:
+                    case FORBIDDEN:
+                    case INTERNAL_SERVER_ERROR:
+                        json = e.getResponseBodyAsString();
+                        break;
+                    default:
+                        log.error(e.getMessage());
+                        if (++tryCount == maxTries) throw e;
+                        break;
+                }
             }
         }
-        log.info("Answer Combain:");
-        log.info("Status Code: {}", responseEntity.getStatusCode());
-
-        json = responseEntity.getBody();
-        log.info(json);
+        log.info("Body: {}", json);
 
         try {
             return objectMapper.readValue(json, CombainResponse.class);

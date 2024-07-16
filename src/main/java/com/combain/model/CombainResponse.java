@@ -50,4 +50,14 @@ public class CombainResponse {
     public static class Address {
 
     }
+
+    @Data
+    public static class Error {
+        Error[] errors;
+
+        String domain;
+        String reason;
+        Integer code;
+        String message;
+    }
 }
