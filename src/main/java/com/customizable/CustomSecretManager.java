@@ -44,7 +44,7 @@ public class CustomSecretManager implements SecretManager{
 	public String getSecret(String tag){
 		String secret = null;
 
-		if(tag == "D2CB_JWT"){
+		if("D2CB_JWT".equals(tag)){
 			try{
 				secret = readString(path);
 			}catch(IOException e){
@@ -58,7 +58,7 @@ public class CustomSecretManager implements SecretManager{
 	public boolean setSecret(String tag, String secret){
 		boolean status = false;
 
-		if(tag == "D2CB_JWT"){
+		if("D2CB_JWT".equals(tag)){
 			try{
 				writeString(path, secret);
 				status = true;

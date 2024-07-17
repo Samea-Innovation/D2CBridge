@@ -49,8 +49,8 @@ public class JwtTokenUtil implements Serializable {
 			log.error("Call to secret manager service before loading related plugin.");
 			return;
 		}
-		if(secretManager.setSecret("D2CB_JWT", secret)){
-			log.error("Could not store JWT in secret manger.");
+		if(!secretManager.setSecret("D2CB_JWT", secret)){
+			log.error("Could not store JWT in secret manager.");
 		}
     }
 
