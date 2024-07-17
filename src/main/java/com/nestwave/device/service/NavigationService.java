@@ -45,6 +45,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.validation.constraints.NotNull;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 import static java.util.Arrays.copyOf;
@@ -162,25 +163,6 @@ public class NavigationService extends GnssService{
 		}
 		navResults = responseEntity.getBody();
 
-		boolean hasHybrid = hybridNavigationParameters.hybrid != null;
-
-		// pas de réponse nextnav ?
-		// pas de précision ? bluetooth: 50, wifi: 100, cell: 500
-		// hybrid ?
-		if (hasHybrid && combainService.isUsable()) {
-			log.info("Payload has Hybrid");
-			if (responseEntity.getStatusCode() != OK || isNotPreciseEnough(hybridNavigationParameters.hybrid, navResults.confidence)) {
-
-				log.info("Trying Combain");
-				// Appel Combain
-
-				CombainRequest combainRequest = HybridNavigationParametersWithCombainRequestMapper.toCombainRequest(hybridNavigationParameters.hybrid);
-				CombainResponse combainResponse = combainService.locate(combainRequest);
-
-				log.info(combainResponse.toString());
-			}
-		}
-
 		for(ThinTrackPlatformStatusRecord thinTrackPlatformStatusRecord : thinTrackPlatformStatusRecords){
 			thinTrackPlatformStatusRecord.setKey(payload.deviceId, navResults.utcTime);
 			log.info("ThinkTrack platform status: {}", thinTrackPlatformStatusRecord);
@@ -195,8 +177,130 @@ public class NavigationService extends GnssService{
 		return response;
 	}
 
+	public GnssServiceResponse sameaLocate(String apiVer, Payload payload, String clientIpAddr) {
+		// NextNav parameters
+		HybridNavPayload hybridNavPayload;
+		HybridNavigationParameters hybridNavigationParameters;
+
+		NavigationParameters navigationParameters;
+		String nextnavEndpoint = "gnssPosition";
+		try {
+			hybridNavPayload = new HybridNavPayload(payload);
+		} catch(InvalidHybridNavPayloadException e) {
+			return new GnssServiceResponse(NOT_ACCEPTABLE, e.getMessage());
+		}
+		ThinTrackPlatformStatusRecord[] thinTrackPlatformStatusRecords = ThinTrackPlatformStatusRecord.of(payload.deviceId, null, hybridNavPayload);
+		hybridNavigationParameters = new HybridNavigationParameters(payload, hybridNavPayload, thinTrackPlatformStatusRecords);
+		for (ThinTrackPlatformStatusRecord record : thinTrackPlatformStatusRecords) {
+			if (record instanceof ThinTrackPlatformBarometerStatusRecord) {
+				String[] features = {"PAAN"};
+				hybridNavigationParameters.features = features;
+				break;
+			}
+		}
+		try {
+			log.info("hybridNavigationParameters = {}", objectMapper.writeValueAsString(hybridNavigationParameters));
+		} catch(Exception e) {
+			log.error("Error when processing JSON: {}", e.getMessage());
+		}
+
+		// Get NextNav positioning
+		navigationParameters = new NavigationParameters(payload);
+		ResponseEntity<GnssPositionResults> responseEntity;
+		GnssPositionResults navResults = null;
+		GnssServiceResponse response = null;
+
+		try {
+			responseEntity = remoteApi(apiVer, nextnavEndpoint, navigationParameters, clientIpAddr, GnssPositionResults.class);
+			byte[] jsonResponse = serializeResponse(responseEntity);
+			if (jsonResponse == null) {
+				throw new NullPointerException("Cloud not serialize navigation results:\n" + responseEntity);
+//				response = new GnssServiceResponse(INTERNAL_SERVER_ERROR, "Cloud not serialize navigation results:\n" + responseEntity);
+			}
+			navResults = responseEntity.getBody();
+		} catch (Exception e) {
+			log.error(e.getMessage());
+		}
+
+		// Get partners positioning
+		boolean hasHybrid = hybridNavigationParameters.hybrid != null;
+
+		// pas de réponse nextnav ?
+		// pas de précision ? bluetooth: 50, wifi: 100, cell: 500
+		// hybrid ?
+		if (hasHybrid && combainService.isUsable()) {
+			log.info("Payload has Hybrid");
+
+			boolean helpNeeded = navResults == null || isNotPreciseEnough(hybridNavigationParameters.hybrid, navResults.confidence);
+			if (helpNeeded) {
+				log.info("Trying Combain");
+				// Appel Combain
+
+				CombainRequest combainRequest = HybridNavigationParametersWithCombainRequestMapper.toCombainRequest(hybridNavigationParameters.hybrid);
+				CombainResponse combainResponse = combainService.locate(combainRequest);
+
+				if (combainResponse.getLocation() != null && combainResponse.getError() == null) {
+					log.info(combainResponse.toString());
+
+					GnssPositionResults combainResults = new GnssPositionResults();
+					CombainResponse.Location location = combainResponse.getLocation();
+					combainResults.confidence = combainResponse.getAccuracy();
+					combainResults.position = new float[]{location.getLng(), location.getLat(), combainResponse.getAltitude()};
+					combainResults.technology = "";
+
+					Object[] cellTowers = hybridNavigationParameters.hybrid.cellTowers;
+					if (cellTowers != null && cellTowers.length != 0) {
+						if (!combainResults.technology.isEmpty())
+							combainResults.technology += "/";
+						combainResults.technology += "Cellular";
+					}
+					Object[] wifiAccessPoints = hybridNavigationParameters.hybrid.wifiAccessPoints;
+					if (wifiAccessPoints != null && wifiAccessPoints.length != 0) {
+						if (!combainResults.technology.isEmpty())
+							combainResults.technology += "/";
+						combainResults.technology += "Wi-Fi";
+					}
+					Object[] bluetoothBeacons = hybridNavigationParameters.hybrid.bluetoothBeacons;
+					if (bluetoothBeacons != null && bluetoothBeacons.length != 0) {
+						if (!combainResults.technology.isEmpty())
+							combainResults.technology += "/";
+						combainResults.technology += "Bluetooth";
+					}
+
+					combainResults.utcTime = ZonedDateTime.now();
+
+					if (navResults == null || navResults.confidence > combainResults.confidence)
+						navResults = combainResults;
+
+				} else {
+					log.error(combainResponse.toString());
+				}
+			}
+		}
+
+		// Results saving
+		boolean validResults = navResults != null;
+		if (!validResults) {
+			navResults = new GnssPositionResults();
+			navResults.payload = new byte[] {};
+			navResults.technology = "None";
+			navResults.utcTime = ZonedDateTime.now();
+		}
+
+		for (ThinTrackPlatformStatusRecord thinTrackPlatformStatusRecord : thinTrackPlatformStatusRecords) {
+			thinTrackPlatformStatusRecord.setKey(payload.deviceId, navResults.utcTime);
+			log.info("ThinkTrack platform status: {}", thinTrackPlatformStatusRecord);
+            navResults.thintrackPlatformStatus = thintrackPlatformStatusRepository.insertNewRecord(thinTrackPlatformStatusRecord);
+        }
+		response = savePosition(payload, navResults);
+		if (response.status == OK && response.message != null) {
+			response = new GnssServiceResponse(!validResults ? NOT_FOUND : OK, hybridNavPayload.addTechno(navResults.technology, response.message));
+		}
+		return response;
+	}
+
 	private static boolean isNotPreciseEnough(HybridNavParameters hybrid, float confidence) {
-		float confidenceToHave = 500;
+		float confidenceToHave = confidence;
 
 		Object[] cellTowers = hybrid.cellTowers;
 		Object[] wifiAccessPoints = hybrid.wifiAccessPoints;
