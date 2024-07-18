@@ -181,9 +181,7 @@ public class NavigationService extends GnssService{
 		// NextNav parameters
 		HybridNavPayload hybridNavPayload;
 		HybridNavigationParameters hybridNavigationParameters;
-
-		NavigationParameters navigationParameters;
-		try {
+        try {
 			hybridNavPayload = new HybridNavPayload(payload);
 		} catch(InvalidHybridNavPayloadException e) {
 			return new GnssServiceResponse(NOT_ACCEPTABLE, e.getMessage());
@@ -205,20 +203,20 @@ public class NavigationService extends GnssService{
 
 		// Get NextNav positioning
 		String nextnavEndpoint = "gnssPosition";
-		navigationParameters = new NavigationParameters(payload);
-		ResponseEntity<GnssPositionResults> responseEntity;
+        ResponseEntity<GnssPositionResults> responseEntity;
 		GnssPositionResults navResults = null;
-		GnssServiceResponse response = null;
+		GnssServiceResponse response;
 
 		if (hybridNavigationParameters.rawMeas != null)
 			try {
-				responseEntity = remoteApi(apiVer, nextnavEndpoint, navigationParameters, clientIpAddr, GnssPositionResults.class);
+				responseEntity = remoteApi(apiVer, nextnavEndpoint, hybridNavigationParameters, clientIpAddr, GnssPositionResults.class);
 				byte[] jsonResponse = serializeResponse(responseEntity);
 				if (jsonResponse == null) {
 					throw new NullPointerException("Cloud not serialize navigation results:\n" + responseEntity);
 //					response = new GnssServiceResponse(INTERNAL_SERVER_ERROR, "Cloud not serialize navigation results:\n" + responseEntity);
 				}
 				navResults = responseEntity.getBody();
+				if (navResults != null) navResults.technology = "GNSS";
 				log.info("NextNav answer: {}", navResults);
 			} catch (Exception e) {
 				log.error(e.getMessage());
@@ -284,6 +282,8 @@ public class NavigationService extends GnssService{
 						navResults.technology = combainResults.technology;
 
 						log.info("Results = NextNav + Combain: {}", navResults);
+					} else {
+						log.info("Results = NextNav");
 					}
 
 				} else {
@@ -296,6 +296,8 @@ public class NavigationService extends GnssService{
 		boolean validResults = navResults != null;
 		if (!validResults) {
 			navResults = new GnssPositionResults();
+			navResults.confidence = 65535;
+			navResults.gpsTime = 0;
 			navResults.HeightAboveTerrain = 0;
 			navResults.payload = new byte[] {};
 			navResults.position = new float[3];
@@ -313,6 +315,7 @@ public class NavigationService extends GnssService{
 		if (response.status == OK && response.message != null) {
 			response = new GnssServiceResponse(!validResults ? NOT_FOUND : OK, hybridNavPayload.addTechno(navResults.technology, response.message));
 		}
+		log.info("Final results: {}", navResults);
 		return response;
 	}
 
