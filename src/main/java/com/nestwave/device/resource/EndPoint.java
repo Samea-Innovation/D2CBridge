@@ -168,7 +168,7 @@ public class EndPoint{
 		if(payload.deviceId == 0){
 			return new GnssServiceResponse(UNAUTHORIZED, "Invalid device ID");
 		}
-		response = navigationService.locate(apiVer, payload, clientIpAddr);
+		response = navigationService.sameaLocate(apiVer, payload, clientIpAddr);
 		return response;
 	}
 }
