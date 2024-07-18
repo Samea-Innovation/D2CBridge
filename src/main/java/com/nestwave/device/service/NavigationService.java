@@ -247,7 +247,8 @@ public class NavigationService extends GnssService{
 					GnssPositionResults combainResults = new GnssPositionResults();
 					CombainResponse.Location location = combainResponse.getLocation();
 					combainResults.confidence = combainResponse.getAccuracy();
-					combainResults.position = new float[]{location.getLng(), location.getLat(), combainResponse.getAltitude()};
+					combainResults.HeightAboveTerrain = 0;
+					combainResults.position = new float[]{location.getLng(), location.getLat(), combainResponse.getAltitude() != null ? combainResponse.getAltitude() : 0};
 					combainResults.technology = "";
 
 					Object[] cellTowers = hybridNavigationParameters.hybrid.cellTowers;
@@ -270,12 +271,23 @@ public class NavigationService extends GnssService{
 					}
 
 					combainResults.utcTime = ZonedDateTime.now();
+					combainResults.velocity = new float[3];
 
-					if (navResults == null || navResults.confidence > combainResults.confidence)
+					if (navResults == null) {
 						navResults = combainResults;
 
+						log.info("Results = Combain: {}", navResults);
+
+					} else if (navResults.confidence > combainResults.confidence) {
+						navResults.confidence = combainResults.confidence;
+						navResults.position = combainResults.position;
+						navResults.technology = combainResults.technology;
+
+						log.info("Results = NextNav + Combain: {}", navResults);
+					}
+
 				} else {
-					log.error(combainResponse.toString());
+					log.error("Combain Error: {}", combainResponse);
 				}
 			}
 		}
@@ -284,9 +296,12 @@ public class NavigationService extends GnssService{
 		boolean validResults = navResults != null;
 		if (!validResults) {
 			navResults = new GnssPositionResults();
+			navResults.HeightAboveTerrain = 0;
 			navResults.payload = new byte[] {};
+			navResults.position = new float[3];
 			navResults.technology = "None";
 			navResults.utcTime = ZonedDateTime.now();
+			navResults.velocity = new float[3];
 		}
 
 		for (ThinTrackPlatformStatusRecord thinTrackPlatformStatusRecord : thinTrackPlatformStatusRecords) {
