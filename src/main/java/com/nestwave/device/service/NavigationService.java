@@ -183,7 +183,6 @@ public class NavigationService extends GnssService{
 		HybridNavigationParameters hybridNavigationParameters;
 
 		NavigationParameters navigationParameters;
-		String nextnavEndpoint = "gnssPosition";
 		try {
 			hybridNavPayload = new HybridNavPayload(payload);
 		} catch(InvalidHybridNavPayloadException e) {
@@ -205,22 +204,25 @@ public class NavigationService extends GnssService{
 		}
 
 		// Get NextNav positioning
+		String nextnavEndpoint = "gnssPosition";
 		navigationParameters = new NavigationParameters(payload);
 		ResponseEntity<GnssPositionResults> responseEntity;
 		GnssPositionResults navResults = null;
 		GnssServiceResponse response = null;
 
-		try {
-			responseEntity = remoteApi(apiVer, nextnavEndpoint, navigationParameters, clientIpAddr, GnssPositionResults.class);
-			byte[] jsonResponse = serializeResponse(responseEntity);
-			if (jsonResponse == null) {
-				throw new NullPointerException("Cloud not serialize navigation results:\n" + responseEntity);
-//				response = new GnssServiceResponse(INTERNAL_SERVER_ERROR, "Cloud not serialize navigation results:\n" + responseEntity);
+		if (hybridNavigationParameters.rawMeas != null)
+			try {
+				responseEntity = remoteApi(apiVer, nextnavEndpoint, navigationParameters, clientIpAddr, GnssPositionResults.class);
+				byte[] jsonResponse = serializeResponse(responseEntity);
+				if (jsonResponse == null) {
+					throw new NullPointerException("Cloud not serialize navigation results:\n" + responseEntity);
+//					response = new GnssServiceResponse(INTERNAL_SERVER_ERROR, "Cloud not serialize navigation results:\n" + responseEntity);
+				}
+				navResults = responseEntity.getBody();
+				log.info("NextNav answer: {}", navResults);
+			} catch (Exception e) {
+				log.error(e.getMessage());
 			}
-			navResults = responseEntity.getBody();
-		} catch (Exception e) {
-			log.error(e.getMessage());
-		}
 
 		// Get partners positioning
 		boolean hasHybrid = hybridNavigationParameters.hybrid != null;
