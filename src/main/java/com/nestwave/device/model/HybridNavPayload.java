@@ -82,6 +82,7 @@ public class HybridNavPayload{
 		for(HybridNavMessage message : messages){
 			if(message instanceof UserData){
 				data[index] = ((UserData) message).data;
+				index += 1;
 			}
 		}
 		return data;
