@@ -41,6 +41,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.validation.constraints.NotNull;
+import java.lang.reflect.Field;
 import java.util.List;
 
 import static java.util.Arrays.copyOf;
@@ -156,6 +157,21 @@ public class NavigationService extends GnssService{
 			log.info("ThinkTrack platform status: {}", thinTrackPlatformStatusRecord);
 			if(thinTrackPlatformStatusRecord != null){
 				navResults.thintrackPlatformStatus = thintrackPlatformStatusRepository.insertNewRecord(thinTrackPlatformStatusRecord);
+			}
+		}
+		Object[] cellTowers = hybridNavigationParameters.hybrid.cellTowers;
+		if (cellTowers != null && cellTowers.length != 0) {
+			try {
+				Object cell = cellTowers[0];
+				Class<?> c = cell.getClass();
+
+				Field field;
+				field = c.getField("rsrp");
+				field.setAccessible(true);
+				navResults.rssi = (int) field.get(cell);
+
+			} catch (Exception e) {
+				log.error(e.getMessage(), e);
 			}
 		}
 		response = savePosition(payload, navResults);

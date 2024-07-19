@@ -55,7 +55,7 @@ class SingleCellInfo{
 	int mcc; /* uint16 ==> 2B */
 	int mnc; /* uint16 ==> 2B */
 	int lac; /* uint16 ==> 2B */
-	int rsrp; /* int16 ==> 2B */
+	public int rsrp; /* int16 ==> 2B */
 
 	SingleCellInfo(byte[] payload){
 		assert payload.length == size;
