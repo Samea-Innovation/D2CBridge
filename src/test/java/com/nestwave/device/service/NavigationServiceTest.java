@@ -18,6 +18,7 @@
  *****************************************************************************/
 package com.nestwave.device.service;
 
+import com.combain.service.CombainService;
 import com.nestwave.device.repository.position.PositionRepository;
 import com.nestwave.device.repository.thintrack.ThinTrackPlatformStatusRepository;
 import com.nestwave.device.util.JwtTokenUtil;
@@ -69,14 +70,22 @@ class NavigationServiceTest {
 	@Mock
 	ThinTrackPlatformStatusRepository thinTrackPlatformStatusRepository;
 
+    @Mock
+    CombainService combainService;
+
   @InjectMocks
   NavigationService navigationService;
 
   @BeforeEach
   public void init() {
-    navigationService = new NavigationService(new JwtTokenUtil(period),
-		                                      navigationRepository,
-		                                      thinTrackPlatformStatusRepository,
-                                              navigationUrl, null, restTemplate);
+    navigationService = new NavigationService(
+            new JwtTokenUtil(period),
+            navigationRepository,
+            thinTrackPlatformStatusRepository,
+            navigationUrl,
+            null,
+            restTemplate,
+            combainService
+    );
   }
 }
