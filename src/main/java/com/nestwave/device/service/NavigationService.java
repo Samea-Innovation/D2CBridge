@@ -280,6 +280,8 @@ public class NavigationService extends GnssService{
 						navResults.confidence = combainResults.confidence;
 						navResults.position = combainResults.position;
 						navResults.technology = combainResults.technology;
+						if (navResults.utcTime == null)
+							navResults.utcTime = combainResults.utcTime;
 
 						log.info("Results = NextNav + Combain: {}", navResults);
 					} else {
