@@ -34,6 +34,7 @@ public class GnssPositionResults{
 	public GpsMeasurements gps;
 	public byte[] payload;
 	public String technology;
+	public Integer rssi;
 	public ThinTrackPlatformStatusRecord thintrackPlatformStatus;
 }
 

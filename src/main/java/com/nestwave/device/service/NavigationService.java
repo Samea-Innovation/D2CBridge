@@ -134,7 +134,6 @@ public class NavigationService extends GnssService{
 		ResponseEntity<GnssPositionResults> responseEntity;
 		GnssServiceResponse response;
 		GnssPositionResults navResults = null;
-		GnssPositionResults hybridResults = null;
 		String api = "locate";
 
 		try{
@@ -162,7 +161,6 @@ public class NavigationService extends GnssService{
 			return new GnssServiceResponse(INTERNAL_SERVER_ERROR, "Cloud not serialize navigation results:\n" + responseEntity);
 		}
 		navResults = responseEntity.getBody();
-
 		for(ThinTrackPlatformStatusRecord thinTrackPlatformStatusRecord : thinTrackPlatformStatusRecords){
 			thinTrackPlatformStatusRecord.setKey(payload.deviceId, navResults.utcTime);
 			log.info("ThinkTrack platform status: {}", thinTrackPlatformStatusRecord);
