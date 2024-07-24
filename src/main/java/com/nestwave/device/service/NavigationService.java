@@ -276,6 +276,8 @@ public class NavigationService extends GnssService{
 
 					} else if (navResults.confidence > combainResults.confidence) {
 						navResults.confidence = combainResults.confidence;
+						if (combainRequest.getCellTowers() != null)
+							navResults.rssi = combainRequest.getCellTowers().get(0).getSignalStrength();
 						navResults.position = combainResults.position;
 						navResults.technology = combainResults.technology;
 						if (navResults.utcTime == null)
