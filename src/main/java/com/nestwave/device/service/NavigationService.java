@@ -205,7 +205,7 @@ public class NavigationService extends GnssService{
 		GnssPositionResults navResults = null;
 		GnssServiceResponse response;
 
-		if (hybridNavigationParameters.rawMeas != null)
+		if (hybridNavigationParameters.rawMeas != null && hybridNavigationParameters.rawMeas.length != 0)
 			try {
 				responseEntity = remoteApi(apiVer, nextnavEndpoint, hybridNavigationParameters, clientIpAddr, GnssPositionResults.class);
 				byte[] jsonResponse = serializeResponse(responseEntity);
@@ -221,7 +221,10 @@ public class NavigationService extends GnssService{
 			}
 
 		// Get partners positioning
-		boolean hasHybrid = hybridNavigationParameters.hybrid != null;
+		boolean hasHybrid = hybridNavigationParameters.hybrid != null &&
+				(hybridNavigationParameters.hybrid.cellTowers != null
+				|| hybridNavigationParameters.hybrid.wifiAccessPoints != null
+				|| hybridNavigationParameters.hybrid.bluetoothBeacons != null);
 
 		// pas de réponse nextnav ?
 		// pas de précision ? bluetooth: 50, wifi: 100, cell: 500
