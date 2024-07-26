@@ -238,6 +238,18 @@ public class NavigationService extends GnssService{
 				// Appel Combain
 
 				CombainRequest combainRequest = HybridNavigationParametersWithCombainRequestMapper.toCombainRequest(hybridNavigationParameters.hybrid);
+
+				if (navResults != null && navResults.confidence < 2500) {
+					CombainRequest.Gps gps = new CombainRequest.Gps();
+					gps.setLatitude(navResults.position[1]);
+					gps.setLongitude(navResults.position[0]);
+					gps.setAltitude(((int) navResults.position[2]));
+					gps.setAccuracy((int) navResults.confidence);
+					gps.setSat(navResults.gps.prn.length);
+					gps.setAge(0);
+					combainRequest.setGps(gps);
+				}
+
 				CombainResponse combainResponse = combainService.locate(combainRequest);
 
 				if (combainResponse.getLocation() != null && combainResponse.getError() == null) {

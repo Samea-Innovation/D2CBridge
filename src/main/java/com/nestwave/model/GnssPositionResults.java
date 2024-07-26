@@ -36,10 +36,10 @@ public class GnssPositionResults{
 	public String technology;
 	public Integer rssi;
 	public ThinTrackPlatformStatusRecord thintrackPlatformStatus;
-}
 
-@Data
-class GpsMeasurements{
-	public float[] prn;
-	public float[] cn0;
+	@Data
+	public static class GpsMeasurements{
+		public float[] prn;
+		public float[] cn0;
+	}
 }
