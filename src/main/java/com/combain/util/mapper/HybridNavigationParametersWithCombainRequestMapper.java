@@ -52,7 +52,7 @@ public class HybridNavigationParametersWithCombainRequestMapper {
                     return request;
                 }
 
-                log.info("MCC: {}, MNC: {}, LAC: {}, CID: {}, RSSI: {}",
+                log.info("MCC: {}, MNC: {}, LAC: {}, CID: {}, RSRP: {}",
                         mcc, mnc, lac, cellId, rsrp);
 
                 CombainRequest.CellTower cellTower = new CombainRequest.CellTower();
