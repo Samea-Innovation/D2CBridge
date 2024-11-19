@@ -119,14 +119,14 @@ public class NavigationService extends GnssService{
 	{
 		log.debug("Drop all positions for deviceId = {}", deviceId);
 		positionRepository.dropAllPositionRecordsWithId(deviceId);
-		return new GnssServiceResponse(HttpStatus.OK, (byte[])null);
+		return new GnssServiceResponse(OK, (byte[])null);
 	}
 
 	public GnssServiceResponse dropPlatformStatusFromDatabase(long deviceId)
 	{
 		log.debug("Drop all platform status records for deviceId = {}", deviceId);
 		thintrackPlatformStatusRepository.dropAllRecordsWithId(deviceId);
-		return new GnssServiceResponse(HttpStatus.OK, (byte[])null);
+		return new GnssServiceResponse(OK, (byte[])null);
 	}
 
 	public GnssServiceResponse locate(String apiVer, Payload payload, String clientIpAddr){
@@ -307,24 +307,24 @@ public class NavigationService extends GnssService{
 				} else {
 					log.error("Combain Error: {}", combainResponse);
 				}
-			} else {
-				Object cell = hybridNavigationParameters.hybrid.cellTowers[0];
-
-				log.info(cell.toString());
-				Class<?> c = cell.getClass();
-
-				try {
-					Field field;
-
-					field = c.getField("rsrp");
-					field.setAccessible(true);
-					navResults.rssi = (int) field.get(cell);
-
-				} catch (Exception e) {
-					log.error(e.getMessage(), e);
-				}
 			}
-		}
+            if (navResults != null) {
+                Object cell = hybridNavigationParameters.hybrid.cellTowers[0];
+
+                log.info(cell.toString());
+                Class<?> c = cell.getClass();
+
+                try {
+                    Field field;
+
+                    field = c.getField("rsrp");
+                    field.setAccessible(true);
+                    navResults.rssi = (int) field.get(cell);
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+        }
 
 		// Results saving
 		boolean validResults = navResults != null;
@@ -335,6 +335,7 @@ public class NavigationService extends GnssService{
 			navResults.HeightAboveTerrain = 0;
 			navResults.payload = new byte[] {};
 			navResults.position = new float[3];
+			navResults.rssi = null;
 			navResults.technology = "None";
 			navResults.utcTime = ZonedDateTime.now();
 			navResults.velocity = new float[3];
@@ -377,7 +378,7 @@ public class NavigationService extends GnssService{
 
 		log.debug("Query all positions for deviceId = {}", deviceId);
 		csv = positionRepository.getAllPositionRecordsWithId(deviceId);
-		return new GnssServiceResponse(HttpStatus.OK, csv.getBytes());
+		return new GnssServiceResponse(OK, csv.getBytes());
 	}
 
 	public GnssServiceResponse retrievePositionsAndPlatofrmStatusFromDatabase(long deviceId, String apiVer)
@@ -390,7 +391,7 @@ public class NavigationService extends GnssService{
 		}
 		log.debug("Query all positions and status records for deviceId = {}", deviceId);
 		csv = thintrackPlatformStatusRepository.getAllRecordsWithId(deviceId, positionRecords, apiVer);
-		return new GnssServiceResponse(HttpStatus.OK, csv.getBytes());
+		return new GnssServiceResponse(OK, csv.getBytes());
 	}
 
 	public GnssServiceResponse savePosition(Payload payload, GnssPositionResults navResults){
@@ -424,7 +425,7 @@ public class NavigationService extends GnssService{
 
 		positionRepository.insertNavigationRecord(positionRecord);
 		log.info("New position inserted in positions database.");
-		return new GnssServiceResponse(HttpStatus.OK, navResults.payload, navResults.gpsTime);
+		return new GnssServiceResponse(OK, navResults.payload, navResults.gpsTime);
 	}
 
 	<T> byte[] serializeResponse(ResponseEntity<T> responseEntity){
