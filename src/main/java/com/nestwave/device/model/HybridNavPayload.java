@@ -82,12 +82,16 @@ public class HybridNavPayload{
 		for(HybridNavMessage message : messages){
 			if(message instanceof UserData){
 				data[index] = ((UserData) message).data;
+				index += 1;
 			}
 		}
 		return data;
 	}
 
 	public byte[] addTechno(String technology, byte[] payload){
+		if (payload.length < 4) {
+			return appendFletcher32(new byte[] { 0 });
+		}
 		byte[] responsePayload = new byte[payload.length - 4 + 1]; /* Remove Fletcher 32 and add techno */
 
 		arraycopy(payload, 0, responsePayload, 1, responsePayload.length - 1);

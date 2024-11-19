@@ -24,15 +24,25 @@ import lombok.Data;
 public class TraxmateSubmitPositionParameters{
 	float latitude;
 	float longitude;
+	float altitude;
 	float accuracy;
+	Float heightAboveTerrain;
+	String technology;
+	Integer temperature;
 	Integer batteryLevel;
+	Integer rssi;
 	Object nswInfo;
 
-	public TraxmateSubmitPositionParameters(float[] position, float confidence, Integer batLevel, Object data){
+	public TraxmateSubmitPositionParameters(float[] position, float confidence, Float heightAboveTerrain, String technology, Integer temperature, Integer batLevel, Integer rssi, Object data){
 		longitude = position[0];
 		latitude = position[1];
+		altitude = position[2];
 		accuracy = confidence;
+		this.heightAboveTerrain = heightAboveTerrain;
+		this.technology = technology;
+		this.temperature = temperature;
 		batteryLevel = batLevel;
+		this.rssi = rssi;
 		nswInfo = data;
 	}
 }

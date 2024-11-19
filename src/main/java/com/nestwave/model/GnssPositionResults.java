@@ -18,11 +18,12 @@
  *****************************************************************************/
 package com.nestwave.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.nestwave.device.repository.thintrack.ThinTrackPlatformStatusRecord;
+import lombok.Data;
 
 import java.time.ZonedDateTime;
 
+@Data
 public class GnssPositionResults{
 	public ZonedDateTime utcTime;
 	public int gpsTime;
@@ -33,10 +34,12 @@ public class GnssPositionResults{
 	public GpsMeasurements gps;
 	public byte[] payload;
 	public String technology;
+	public Integer rssi;
 	public ThinTrackPlatformStatusRecord thintrackPlatformStatus;
-}
 
-class GpsMeasurements{
-	public float[] prn;
-	public float[] cn0;
+	@Data
+	public static class GpsMeasurements{
+		public float[] prn;
+		public float[] cn0;
+	}
 }

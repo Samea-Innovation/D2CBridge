@@ -50,12 +50,12 @@ public class HybridNavParameters{
 
 @Data
 class SingleCellInfo{
-	static int size = 12; /* C struct size */
-	int cellId; /* uint32 ==> 4B */
-	int mcc; /* uint16 ==> 2B */
-	int mnc; /* uint16 ==> 2B */
-	int lac; /* uint16 ==> 2B */
-	int rsrp; /* int16 ==> 2B */
+	public static int size = 12; /* C struct size */
+	public int cellId; /* uint32 ==> 4B */
+	public int mcc; /* uint16 ==> 2B */
+	public int mnc; /* uint16 ==> 2B */
+	public int lac; /* uint16 ==> 2B */
+	public int rsrp; /* int16 ==> 2B */
 
 	SingleCellInfo(byte[] payload){
 		assert payload.length == size;
@@ -94,9 +94,9 @@ class MacAddress48{
 
 @Data
 class SingleWifiInfo{
-	static int size = MacAddress48.size + 2; /* C struct size */
-	String mac;
-	int rssi; /* int16 ==> 2B */
+	public static int size = MacAddress48.size + 2; /* C struct size */
+	public String mac;
+	public int rssi; /* int16 ==> 2B */
 
 	SingleWifiInfo(byte[] payload){
 		assert payload.length == size;
@@ -107,9 +107,9 @@ class SingleWifiInfo{
 
 @Data
 class SingleBluetoothInfo{
-	static int size = MacAddress48.size + 2; /* C struct size */
-	String mac;
-	int rssi; /* int16 ==> 2B */
+	public static int size = MacAddress48.size + 2; /* C struct size */
+	public String mac;
+	public int rssi; /* int16 ==> 2B */
 
 	SingleBluetoothInfo(byte[] payload){
 		assert payload.length == size;

@@ -125,6 +125,9 @@ jwt:
   url: ${JWT_RENEW_URL:https://navigation.nextnav.io/authenticate/renew}
 
 partners:
+  combain:
+    url: https://apiv2.combain.com?key=
+    token: ${COMBAIN_TOKEN:}
   traxmate:
     url: https://online.traxmate.io:3000
     # Special customerId values used to store device position into Traxmate DB
