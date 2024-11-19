@@ -45,6 +45,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.validation.constraints.NotNull;
+import java.lang.reflect.Field;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -305,6 +306,22 @@ public class NavigationService extends GnssService{
 
 				} else {
 					log.error("Combain Error: {}", combainResponse);
+				}
+			} else {
+				Object cell = hybridNavigationParameters.hybrid.cellTowers[0];
+
+				log.info(cell.toString());
+				Class<?> c = cell.getClass();
+
+				try {
+					Field field;
+
+					field = c.getField("rsrp");
+					field.setAccessible(true);
+					navResults.rssi = (int) field.get(cell);
+
+				} catch (Exception e) {
+					log.error(e.getMessage(), e);
 				}
 			}
 		}
