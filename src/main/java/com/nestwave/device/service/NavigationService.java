@@ -296,8 +296,7 @@ public class NavigationService extends GnssService{
 							navResults.rssi = combainRequest.getCellTowers().get(0).getSignalStrength();
 						navResults.position = combainResults.position;
 						navResults.technology = combainResults.technology;
-						if (navResults.utcTime == null)
-							navResults.utcTime = combainResults.utcTime;
+						navResults.utcTime = combainResults.utcTime;
 
 						log.info("Results = NextNav + Combain: {}", navResults);
 					} else {
