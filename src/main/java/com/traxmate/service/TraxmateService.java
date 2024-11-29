@@ -22,104 +22,100 @@ import com.nestwave.service.PartnerService;
 import com.nestwave.device.service.GnssServiceResponse;
 import com.nestwave.device.service.NavigationService;
 import com.nestwave.model.GnssPositionResults;
-import com.traxmate.model.TraxmateSubmitPositionParameters;
+import com.traxmate.model.TraxmateCapture;
+import com.traxmate.util.TraxmateSubmitDataMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
+
+import javax.annotation.PostConstruct;
+
+import java.util.List;
 
 import static java.lang.Long.toUnsignedString;
-import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.CONTINUE;
-import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 
 @Slf4j
 @Service
-public class TraxmateService implements PartnerService{
-	final RestTemplate restTemplate;
-	final int[] customerIdList;
-	final String uriBase;
-	final String token;
-	final Environment environment;
+public class TraxmateService implements PartnerService {
+	@Autowired
+	private RestTemplate restTemplate;
+	@Value("${partners.traxmate.url}")
+	private String url;
+	@Value("${partners.traxmate.api.submitPosition}")
+	private String endpoint;
 
-	public TraxmateService(RestTemplate restTemplate,
-	                       @Value("${partners.traxmate.customerIdList}") int[] customerIdList,
-	                       @Value("${partners.traxmate.url}") String uriBase,
-	                       NavigationService navigationService, Environment environment){
-		this.restTemplate = restTemplate;
-		this.customerIdList = customerIdList;
-		this.uriBase = uriBase;
-		this.environment = environment;
-		this.token = environment.getProperty("partners.traxmate.token");
-		/* Disable the plugin if there is no token. */
-		if(token != null && !token.equals("")){
-			/* Token is provided. Enable the plugin by registering it. */
-			navigationService.register(this);
+	@Value("${partners.traxmate.token}")
+	private String token;
+
+	@Value("${partners.traxmate.customerIdList}")
+	private List<Integer> customerIdList;
+
+	@Autowired
+	private TraxmateSubmitDataMapper mapper;
+
+	@Autowired
+	private NavigationService navigationService;
+
+	public TraxmateService() {}
+
+	@PostConstruct
+	public void initialize() {
+		if(token == null || token.isEmpty())
+			return;
+		log.info("Registering Traxmate service.");
+
+		if (url == null || url.isEmpty()) {
+			log.error("No URL supplied at startup!");
+			return;
 		}
-	}
-
-	public GnssServiceResponse remoteApi(String api, Object data, String... apiParameters){
-		ResponseEntity<byte[]> responseEntity;
-		HttpHeaders headers = new HttpHeaders();
-		headers.set("Authorization", "Bearer This request is from Nestwave");
-		HttpEntity<?> requestEntity = new HttpEntity<>(data, headers);
-		String uri;
-
-		api = format(api, apiParameters);
-		log.info("Request to API: {}/{}", uriBase, api);
-		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(uriBase + "/" + api);
-		uri = builder.toUriString();
-		log.info("Request forwarded to: {}", uri);
-		responseEntity = restTemplate.postForEntity(uri, requestEntity, byte[].class, data);
-		return new GnssServiceResponse(responseEntity.getStatusCode(), responseEntity.getBody());
-	}
-
-	public GnssServiceResponse submitPosition(int customerId, long deviceId,TraxmateSubmitPositionParameters data){
-		final String api = environment.getProperty("partners.traxmate.api.submitPosition");
-
-		log.info("deviceId: {}, customerId: {}", deviceId, customerId);
-		if(api != null){
-			for(int cId : customerIdList){
-				if(cId == customerId){
-					return remoteApi(api.replace("@{deviceId}", toUnsignedString(deviceId)), data);
-				}
-			}
-			return new GnssServiceResponse(CONTINUE, "Not for us!".getBytes());
-		}else{
-			return new GnssServiceResponse(NOT_IMPLEMENTED, "No url for third party service.\n${partners.traxmate.api.submitPosition} expanded to null.");
+		if (endpoint == null || endpoint.isEmpty()) {
+			log.warn("No endpoint supplied at startup! Using '@{deviceId}'.");
+			endpoint = "@{deviceId}";
 		}
+		if (!endpoint.contains("@{deviceId}")) {
+			log.error("Endpoint '{}' needs to contain '@{deviceId}'!", endpoint);
+			return;
+		}
+		// Enable the plugin by registering it.
+		navigationService.register(this);
 	}
 
 	@Override
-	public GnssServiceResponse onGnssPosition(int customerId, long deviceId, long IMEI, GnssPositionResults gnssPositionResults){
-		float[] position = gnssPositionResults.position;
-		float confidence = gnssPositionResults.confidence;
-		float hat = gnssPositionResults.HeightAboveTerrain;
-		String technology = gnssPositionResults.technology;
-		Integer ambTemp = null;
-		Integer batLevel = null;
-		Integer rssi = gnssPositionResults.rssi;
+	public GnssServiceResponse onGnssPosition(
+			int customerId,
+			long deviceId,
+			long IMEI,
+			GnssPositionResults gnssPositionResults
+	) {
+		if (!customerIdList.contains(customerId))
+			return new GnssServiceResponse(CONTINUE, "Not for us!".getBytes());
+		log.debug("Customer ID: {}", customerId);
 
-		if(gnssPositionResults.thintrackPlatformStatus != null){
-			batLevel = gnssPositionResults.thintrackPlatformStatus.getBatteryChargeLevel();
-			ambTemp = gnssPositionResults.thintrackPlatformStatus.getAmbientTemperature();
-		}
-		TraxmateSubmitPositionParameters data = new TraxmateSubmitPositionParameters(
-				position,
-				confidence,
-				hat,
-				technology,
-				ambTemp,
-				batLevel,
-				rssi,
-				gnssPositionResults
-		);
+		TraxmateCapture data = mapper.mapData(deviceId, IMEI, customerId, gnssPositionResults);
 
-		return submitPosition(customerId, deviceId, data);
+		ResponseEntity<byte[]> response = submitData(deviceId, data);
+
+		return new GnssServiceResponse(response.getStatusCode(), response.getBody());
+	}
+
+	private ResponseEntity<byte[]> submitData(long deviceId, TraxmateCapture data) {
+		log.info("Submitting data to '{}'", this.url);
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+
+		HttpEntity<TraxmateCapture> requestEntity = new HttpEntity<>(data, headers);
+
+		String uri = url + endpoint.replace("@{deviceId}", toUnsignedString(deviceId));
+		log.debug(uri);
+
+		return restTemplate.postForEntity(uri, requestEntity, byte[].class, data);
 	}
 }
