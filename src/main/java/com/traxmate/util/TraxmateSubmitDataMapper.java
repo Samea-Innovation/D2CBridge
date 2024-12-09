@@ -47,7 +47,7 @@ public class TraxmateSubmitDataMapper {
             }
         }
 
-        signals.setPositionTime(gnssPositionResults.utcTime.toLocalDateTime().toString());
+        signals.setPositionTime(gnssPositionResults.utcTime);
 
         signals.setPositioning(gnssPositionResults.technology);
 

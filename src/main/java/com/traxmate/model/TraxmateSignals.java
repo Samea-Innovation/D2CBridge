@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.ZonedDateTime;
+
 @Getter
 @Setter
 public class TraxmateSignals {
@@ -35,7 +37,7 @@ public class TraxmateSignals {
     private Integer shockCount;
 
     @JsonProperty("Position Time")
-    private String positionTime;
+    private ZonedDateTime positionTime;
 
     @JsonProperty("Positioning")
     private String positioning;
