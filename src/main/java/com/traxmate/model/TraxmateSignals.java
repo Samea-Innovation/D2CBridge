@@ -43,11 +43,11 @@ public class TraxmateSignals {
     private String positioning;
 
     @JsonProperty("Accuracy")
-    private int accuracy;
+    private Integer accuracy;
     @JsonProperty("Altitude")
-    private float altitude;
+    private Float altitude;
     @JsonProperty("Height Above Terrain")
-    private float hat;
+    private Float hat;
     @JsonProperty("Location")
     private Location location;
     @JsonProperty("Source")
@@ -57,7 +57,7 @@ public class TraxmateSignals {
     private String debugging;
 
     @JsonProperty("Connection Signal Strength")
-    private int connectionSignalStrength;   // unit: dBm
+    private Integer connectionSignalStrength;   // unit: dBm
 
     @JsonProperty("radioData")
     private RadioData radioData;
