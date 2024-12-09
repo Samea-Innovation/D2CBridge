@@ -125,6 +125,8 @@ jwt:
   url: ${JWT_RENEW_URL:https://navigation.nextnav.io/authenticate/renew}
 
 partners:
+  basic:
+    url: ${BASIC_PARTNER_URL:}
   combain:
     url: https://apiv2.combain.com?key=
     token: ${COMBAIN_TOKEN:}
