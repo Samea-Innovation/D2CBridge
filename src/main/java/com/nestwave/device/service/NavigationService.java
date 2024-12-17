@@ -296,6 +296,7 @@ public class NavigationService extends GnssService{
 						if (combainRequest.getCellTowers() != null)
 							navResults.rssi = combainRequest.getCellTowers().get(0).getSignalStrength();
 						navResults.position = combainResults.position;
+						navResults.payload = null;
 						navResults.technology = combainResults.technology;
 						navResults.utcTime = combainResults.utcTime;
 
@@ -333,7 +334,7 @@ public class NavigationService extends GnssService{
 			navResults.confidence = 65535;
 			navResults.gpsTime = 0;
 			navResults.HeightAboveTerrain = 0;
-			navResults.payload = new byte[] {};
+			navResults.payload = null;
 			navResults.position = new float[3];
 			navResults.rssi = null;
 			navResults.technology = "None";
