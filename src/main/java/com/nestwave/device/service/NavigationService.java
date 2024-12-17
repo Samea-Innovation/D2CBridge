@@ -31,6 +31,7 @@ import com.nestwave.device.repository.thintrack.ThinTrackPlatformBarometerStatus
 import com.nestwave.device.repository.thintrack.ThinTrackPlatformStatusRecord;
 import com.nestwave.device.repository.thintrack.ThinTrackPlatformStatusRepository;
 import com.nestwave.device.util.JwtTokenUtil;
+import com.nestwave.device.util.ThintrackDownLinkEncoder;
 import com.nestwave.model.GnssPositionResults;
 import com.nestwave.model.Payload;
 import com.nestwave.service.PartnerService;
@@ -338,6 +339,15 @@ public class NavigationService extends GnssService{
 			navResults.technology = "None";
 			navResults.utcTime = ZonedDateTime.now();
 			navResults.velocity = new float[3];
+		}
+
+		if (navResults.payload == null) {
+			navResults.payload = ThintrackDownLinkEncoder.encode(
+					(byte) 2,
+					navResults.utcTime,
+					(short) navResults.confidence,
+					navResults.position
+			);
 		}
 
 		for (ThinTrackPlatformStatusRecord thinTrackPlatformStatusRecord : thinTrackPlatformStatusRecords) {
