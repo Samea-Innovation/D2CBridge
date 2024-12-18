@@ -14,13 +14,8 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
 @Component
 public class ThintrackDownLinkEncoder {
 
-    public static byte[] encode(byte techno, ZonedDateTime utc, short accuracy, float[] position) {
+    public static byte[] encode(ZonedDateTime utc, int accuracy, float[] position) {
         byte[] payload = { };
-
-        // 0 - Techno (u8 | 1 byte)
-        byte[] bTechno = byteToBytes(techno);
-        payload = Bytes.concatenate(payload, bTechno);
-        log.debug("DownLink | Techno: {} -> {}", techno, bTechno);
 
         // 1 - UTC Time 32-bit Epoch (u32 | 4 bytes)
         byte[] bUTC = encodeUTC(utc);
@@ -35,22 +30,23 @@ public class ThintrackDownLinkEncoder {
         // 3 - ? (4 bytes)
         payload = Bytes.concatenate(payload, new byte[4]);
 
-        // 4 - Accuracy (u16 | 2 bytes)
-        byte[] bAccuracy = shortToBytes(accuracy, LITTLE_ENDIAN);
+        // 4 - Accuracy (u32 | 4 bytes)
+        byte[] bAccuracy = intToBytes(accuracy, LITTLE_ENDIAN);
         payload = Bytes.concatenate(payload, bAccuracy);
         log.debug("DownLink | Accuracy: {} -> {}", accuracy, bAccuracy);
 
         // 5 - Position (lat, lng, alt)
-        byte[] bPosition = encodePosition(position[0], position[0], position[0]);
+        byte[] bPosition = encodePosition(position[1], position[0], position[2]);
         payload = Bytes.concatenate(payload, bPosition);
-        log.debug("DownLink | Position: (lat: {}, lng: {}, alt: {}) -> {}", position[0], position[0], position[0], bPosition);
+        log.debug("DownLink | Position: (lat: {}, lng: {}, alt: {}) -> {}", position[1], position[0], position[2], bPosition);
 
-        // 6 - ? (14 bytes)
-        payload = Bytes.concatenate(payload, new byte[14]);
+        // 6 - ? (20 bytes)
+        payload = Bytes.concatenate(payload, new byte[20]);
 
         // 7 - Check Word
         int checkWord = Payload.fletcher32(payload, payload.length);
-        payload = Bytes.concatenate(payload, intToBytes(checkWord, LITTLE_ENDIAN));
+        payload = Payload.appendFletcher32(payload);
+//        payload = Bytes.concatenate(payload, intToBytes(checkWord, LITTLE_ENDIAN));
         log.debug("DownLink | Check Word: {}", checkWord);
 
         return payload;

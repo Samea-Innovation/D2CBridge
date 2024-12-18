@@ -48,6 +48,7 @@ import org.springframework.web.client.RestTemplate;
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.Field;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Arrays.copyOf;
@@ -288,6 +289,7 @@ public class NavigationService extends GnssService{
 
 					if (navResults == null) {
 						navResults = combainResults;
+						navResults.payload = null;
 
 						log.info("Results = Combain: {}", navResults);
 
@@ -343,12 +345,13 @@ public class NavigationService extends GnssService{
 		}
 
 		if (navResults.payload == null) {
+			log.info("downlink payload: {} | accuracy: {} | pos: {}", navResults.utcTime, (int) navResults.confidence, navResults.position);
 			navResults.payload = ThintrackDownLinkEncoder.encode(
-					(byte) 2,
 					navResults.utcTime,
-					(short) navResults.confidence,
+                    (int) navResults.confidence,
 					navResults.position
 			);
+			System.out.println(Arrays.toString(navResults.payload));;
 		}
 
 		for (ThinTrackPlatformStatusRecord thinTrackPlatformStatusRecord : thinTrackPlatformStatusRecords) {
