@@ -31,6 +31,7 @@ import com.nestwave.device.repository.thintrack.ThinTrackPlatformBarometerStatus
 import com.nestwave.device.repository.thintrack.ThinTrackPlatformStatusRecord;
 import com.nestwave.device.repository.thintrack.ThinTrackPlatformStatusRepository;
 import com.nestwave.device.util.JwtTokenUtil;
+import com.nestwave.device.util.ThintrackDownLinkEncoder;
 import com.nestwave.model.GnssPositionResults;
 import com.nestwave.model.Payload;
 import com.nestwave.service.PartnerService;
@@ -47,6 +48,7 @@ import org.springframework.web.client.RestTemplate;
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.Field;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Arrays.copyOf;
@@ -287,6 +289,7 @@ public class NavigationService extends GnssService{
 
 					if (navResults == null) {
 						navResults = combainResults;
+						navResults.payload = null;
 
 						log.info("Results = Combain: {}", navResults);
 
@@ -295,6 +298,7 @@ public class NavigationService extends GnssService{
 						if (combainRequest.getCellTowers() != null)
 							navResults.rssi = combainRequest.getCellTowers().get(0).getSignalStrength();
 						navResults.position = combainResults.position;
+						navResults.payload = null;
 						navResults.technology = combainResults.technology;
 						navResults.utcTime = combainResults.utcTime;
 
@@ -332,12 +336,22 @@ public class NavigationService extends GnssService{
 			navResults.confidence = 65535;
 			navResults.gpsTime = 0;
 			navResults.HeightAboveTerrain = 0;
-			navResults.payload = new byte[] {};
+			navResults.payload = null;
 			navResults.position = new float[3];
 			navResults.rssi = null;
 			navResults.technology = "None";
 			navResults.utcTime = ZonedDateTime.now();
 			navResults.velocity = new float[3];
+		}
+
+		if (navResults.payload == null) {
+			log.info("downlink payload: {} | accuracy: {} | pos: {}", navResults.utcTime, (int) navResults.confidence, navResults.position);
+			navResults.payload = ThintrackDownLinkEncoder.encode(
+					navResults.utcTime,
+                    (int) navResults.confidence,
+					navResults.position
+			);
+			System.out.println(Arrays.toString(navResults.payload));;
 		}
 
 		for (ThinTrackPlatformStatusRecord thinTrackPlatformStatusRecord : thinTrackPlatformStatusRecords) {
