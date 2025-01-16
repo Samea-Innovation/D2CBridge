@@ -179,7 +179,7 @@ services:
     depends_on:
       - tracking
     dns_search:
-      - nextnav.io
+      - nw.do
 
 networks:
   backend:
@@ -225,7 +225,7 @@ The device identifier is the first bytes of the received data packet:
   used anymore.
 
 ### Security Manager plugin
-D2CB service uses a Json Web Token to authenticate to NextNav Hybrid GNSS Cloud.
+D2CB service uses a Json Web Token to authenticate to nestwave Hybrid GNSS Cloud.
 It updates it regularly using `/renew` API.
 The newly retrieved JWT needs to be stored in a secure persistent storage.
 
