@@ -242,7 +242,8 @@ public class NavigationService extends GnssService{
 
 				CombainRequest combainRequest = HybridNavigationParametersWithCombainRequestMapper.toCombainRequest(hybridNavigationParameters.hybrid);
 
-				if (navResults != null && navResults.confidence < 2500) {
+				// TODO: Assess Combain contribution under 100m (see Wi-Fi accuracy need)
+				if (navResults != null && navResults.confidence < 150) {
 					CombainRequest.Gps gps = new CombainRequest.Gps();
 					gps.setLatitude(navResults.position[1]);
 					gps.setLongitude(navResults.position[0]);
