@@ -118,10 +118,10 @@ class JwtUpdateSchedulerService implements  Runnable{
 		String secret = jwtRenew(jwtTokenUtil.getSecret());
 
 		if(secret != null){
-			log.info("Updating JWT from NextNavCloud was successful. Saving it into secret manager plugin.");
+			log.info("Updating JWT from nestwave cloud was successful. Saving it into secret manager plugin.");
 			jwtTokenUtil.jwtUpdate(secret);
 		}else{
-			log.error("Failed to update JWT from NextNav Cloud.");
+			log.error("Failed to update JWT from nestwave cloud.");
 		}
 	}
 

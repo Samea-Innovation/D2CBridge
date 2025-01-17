@@ -32,7 +32,7 @@ from getpass import getpass
 from nswpkg.tools.cli.lib import UtStatus, auto, exit
 from requests import post
 
-AUTH_URL = 'https://navigation.nextnav.io/authenticate'
+AUTH_URL = 'https://nw.do/authenticate'
 
 class UtStatus(UtStatus):
 	INVALID_CREDENTIALS = auto()

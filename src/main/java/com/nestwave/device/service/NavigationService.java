@@ -179,7 +179,7 @@ public class NavigationService extends GnssService{
 	}
 
 	public GnssServiceResponse sameaLocate(String apiVer, Payload payload, String clientIpAddr) {
-		// NextNav parameters
+		// nestwave parameters
 		HybridNavPayload hybridNavPayload;
 		HybridNavigationParameters hybridNavigationParameters;
         try {
@@ -202,15 +202,15 @@ public class NavigationService extends GnssService{
 			log.error("Error when processing JSON: {}", e.getMessage());
 		}
 
-		// Get NextNav positioning
-		String nextnavEndpoint = "gnssPosition";
+		// Get nestwave positioning
+		String nestwaveEndpoint = "gnssPosition";
         ResponseEntity<GnssPositionResults> responseEntity;
 		GnssPositionResults navResults = null;
 		GnssServiceResponse response;
 
 		if (hybridNavigationParameters.rawMeas != null && hybridNavigationParameters.rawMeas.length != 0)
 			try {
-				responseEntity = remoteApi(apiVer, nextnavEndpoint, hybridNavigationParameters, clientIpAddr, GnssPositionResults.class);
+				responseEntity = remoteApi(apiVer, nestwaveEndpoint, hybridNavigationParameters, clientIpAddr, GnssPositionResults.class);
 				byte[] jsonResponse = serializeResponse(responseEntity);
 				if (jsonResponse == null) {
 					throw new NullPointerException("Cloud not serialize navigation results:\n" + responseEntity);
@@ -218,7 +218,7 @@ public class NavigationService extends GnssService{
 				}
 				navResults = responseEntity.getBody();
 				if (navResults != null) navResults.technology = "GNSS";
-				log.info("NextNav answer: {}", navResults);
+				log.info("nestwave answer: {}", navResults);
 			} catch (Exception e) {
 				log.error(e.getMessage());
 			}
@@ -229,7 +229,7 @@ public class NavigationService extends GnssService{
 				|| hybridNavigationParameters.hybrid.wifiAccessPoints != null
 				|| hybridNavigationParameters.hybrid.bluetoothBeacons != null);
 
-		// pas de réponse nextnav ?
+		// pas de réponse nestwave ?
 		// pas de précision ? bluetooth: 50, wifi: 100, cell: 500
 		// hybrid ?
 		if (hasHybrid && combainService.isUsable()) {
@@ -242,7 +242,8 @@ public class NavigationService extends GnssService{
 
 				CombainRequest combainRequest = HybridNavigationParametersWithCombainRequestMapper.toCombainRequest(hybridNavigationParameters.hybrid);
 
-				if (navResults != null && navResults.confidence < 2500) {
+				// TODO: Assess Combain contribution under 100m (see Wi-Fi accuracy need)
+				if (navResults != null && navResults.confidence < 150) {
 					CombainRequest.Gps gps = new CombainRequest.Gps();
 					gps.setLatitude(navResults.position[1]);
 					gps.setLongitude(navResults.position[0]);
@@ -302,9 +303,9 @@ public class NavigationService extends GnssService{
 						navResults.technology = combainResults.technology;
 						navResults.utcTime = combainResults.utcTime;
 
-						log.info("Results = NextNav + Combain: {}", navResults);
+						log.info("Results = nestwave + Combain: {}", navResults);
 					} else {
-						log.info("Results = NextNav");
+						log.info("Results = nestwave");
 					}
 
 				} else {

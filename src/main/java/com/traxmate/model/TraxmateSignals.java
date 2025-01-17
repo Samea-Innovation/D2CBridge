@@ -51,7 +51,7 @@ public class TraxmateSignals {
     @JsonProperty("Location")
     private Location location;
     @JsonProperty("Source")
-    private String source;                  // NextNav / Combain (cps) / Google / Here
+    private String source;                  // nestwave / Combain (cps) / Google / Here
 
     @JsonProperty("Debugging")
     private String debugging;
