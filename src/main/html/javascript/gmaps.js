@@ -24,7 +24,7 @@ function addInfo(marker, header, info){
 
 	for(var n = 0; n < info.length; n += 1){
 		name = header[n].replace(/\[.*\]/, '');
-		unit = header[n].replace(/[^\[]*\[?/, ' ').replace(']', '');
+		unit = header[n].replace(/[^\[]*\[?/, ' ').replace(/\]/g, '');
 		value = info[n].replace('Z[Etc/UTC]', ' UTC');
 		markerInfo += '<tr><td>' + name + ':</td><td>' + value + unit + '</td></tr>';
 	}
