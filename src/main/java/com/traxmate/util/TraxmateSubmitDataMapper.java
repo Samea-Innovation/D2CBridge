@@ -12,6 +12,18 @@ import org.springframework.stereotype.Component;
 public class TraxmateSubmitDataMapper {
     private final static int THINTRACK_TYPE_ID = 35976;
 
+    private int toSafeAccuracy(float confidence) {
+        if (!Float.isFinite(confidence)) {
+            return 0;
+        }
+        if (confidence > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        if (confidence < Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
+        }
+        return (int) confidence;
+    }
 
     public TraxmateCapture mapData(long deviceId, long imei, int customerId, GnssPositionResults gnssPositionResults) {
         String name = "Thintrack - " + deviceId;
@@ -51,7 +63,7 @@ public class TraxmateSubmitDataMapper {
 
         signals.setPositioning(gnssPositionResults.technology);
 
-        signals.setAccuracy((int) gnssPositionResults.confidence);
+        signals.setAccuracy(toSafeAccuracy(gnssPositionResults.confidence));
         signals.setAltitude(gnssPositionResults.position[2]);
         signals.setHat(gnssPositionResults.HeightAboveTerrain);
         signals.setLocation(new Location(
