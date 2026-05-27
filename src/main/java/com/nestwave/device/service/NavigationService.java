@@ -346,10 +346,17 @@ public class NavigationService extends GnssService{
 		}
 
 		if (navResults.payload == null) {
-			log.info("downlink payload: {} | accuracy: {} | pos: {}", navResults.utcTime, (int) navResults.confidence, navResults.position);
+			int safeConfidence;
+			if (navResults.confidence < Integer.MIN_VALUE || navResults.confidence > Integer.MAX_VALUE) {
+				log.warn("Confidence value out of int range ({}), using fallback 65535", navResults.confidence);
+				safeConfidence = 65535;
+			} else {
+				safeConfidence = (int) navResults.confidence;
+			}
+			log.info("downlink payload: {} | accuracy: {} | pos: {}", navResults.utcTime, safeConfidence, navResults.position);
 			navResults.payload = ThintrackDownLinkEncoder.encode(
 					navResults.utcTime,
-                    (int) navResults.confidence,
+                    safeConfidence,
 					navResults.position
 			);
 			System.out.println(Arrays.toString(navResults.payload));;
