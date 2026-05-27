@@ -300,7 +300,7 @@ In order to add a new one, just copy the folder to another name and modify the c
 
 ### Difficulties at Nestwave/Sequans account creation
 
-The email/account validation screen is known to break and not letting you continue (yes we know it's dumb).
+The email/account validation screen is known to break and not letting you continue.
 
 The `[next]` button will remain disabled (greyed out) and you will be stuck.
 To continue you will need to enable the button by editing the HTML. 
